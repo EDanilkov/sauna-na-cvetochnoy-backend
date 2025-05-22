@@ -16,8 +16,8 @@ export class TelegramService {
   private readonly apiUrl: string;
 
   constructor() {
-    this.botToken = config.telegramBotToken;
-    this.chatId = config.telegramChatId;
+    this.botToken = config.telegram.botToken;
+    this.chatId = config.telegram.chatId;
     this.apiUrl = `https://api.telegram.org/bot${this.botToken}`;
     
     // Отладочная информация
@@ -43,30 +43,32 @@ export class TelegramService {
            `Телефон: ${data.phone}`;
   }
 
-  async sendBookingNotification(data: BookingData): Promise<void> {
+  async sendMessage(message: string): Promise<void> {
     try {
-      const message = this.formatMessage(data);
-      console.log('Telegram Service: Подготовка сообщения:', message);
-      
-      console.log('Telegram Service: Отправка запроса к Telegram API');
-      const response = await axios.post(`${this.apiUrl}/sendMessage`, {
+      await axios.post(`${this.apiUrl}/sendMessage`, {
         chat_id: this.chatId,
         text: message,
         parse_mode: 'HTML'
       });
-      
-      console.log('Telegram Service: Ответ от Telegram API:', response.data);
     } catch (error) {
-      console.error('Telegram Service: Ошибка при отправке сообщения:', error);
-      if (axios.isAxiosError(error)) {
-        console.error('Telegram Service: Детали ошибки:', {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-          url: error.config?.url
-        });
-      }
-      throw new Error('Failed to send booking notification');
+      console.error('Error sending Telegram message:', error);
+      throw error;
     }
+  }
+
+  async sendBookingNotification(bookingData: any): Promise<void> {
+    const message = `
+<b>🎉 Новое бронирование!</b>
+
+📅 Дата: ${bookingData.date}
+⏰ Время: ${bookingData.time}
+⏱ Длительность: ${bookingData.duration} часа
+👥 Количество гостей: ${bookingData.guests}
+
+👤 Имя: ${bookingData.name}
+📱 Телефон: ${bookingData.phone}
+    `;
+
+    await this.sendMessage(message);
   }
 } 
